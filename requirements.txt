@@ -3,4 +3,4 @@ numpy
 keras
 Pillow
 gunicorn
-tensorflow
+tensorflow-cpu==2.7.0
