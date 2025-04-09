@@ -1,18 +1,22 @@
-# Important imports
 from app import app
 from flask import request, render_template
-from keras import models
 import numpy as np
 from PIL import Image
 import string
 import random
 import os
+import tensorflow as tf
 
 # Config path for image uploads
 app.config['INITIAL_FILE_UPLOADS'] = 'app/static/uploads'
 
-# Load the trained model
-model = models.load_model('app/static/model/bird_species.h5')
+# Load the TFLite model
+interpreter = tf.lite.Interpreter(model_path='app/static/model/bird_species_quant.tflite')
+interpreter.allocate_tensors()
+
+# Get input and output details
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
 
 # Class labels (make sure they are in the correct order of your model's output)
 classes = [
@@ -46,13 +50,19 @@ def index():
         image.save(image_path)
 
         # Preprocess image
-        image_arr = np.array(image).reshape(1, 224, 224, 3) / 255.0
+        image_arr = np.array(image).reshape(1, 224, 224, 3).astype(np.float32) / 255.0
 
-        # Make prediction
-        result = model.predict(image_arr)
+        # Set input tensor
+        interpreter.set_tensor(input_details[0]['index'], image_arr)
+        
+        # Run inference
+        interpreter.invoke()
+        
+        # Get output tensor
+        result = interpreter.get_tensor(output_details[0]['index'])
+        
         ind = np.argmax(result)
         confidence = round(result[0][ind] * 100, 2)
-
         prediction = classes[ind]
 
         return render_template(

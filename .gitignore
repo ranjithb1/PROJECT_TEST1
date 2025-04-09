@@ -1,0 +1,6 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+*.h5  # Exclude original Keras model (since you have .tflite)
+uploads/  # Exclude user-uploaded images
