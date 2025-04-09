@@ -1,0 +1,277 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bird Species Prediction</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Fredoka+One&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+  <style>
+    :root {
+      --primary: #4a934a;
+      --secondary: #2e5e2e;
+      --accent: #f7c35f;
+      --light: #f8f9fa;
+      --dark: #1a2e1a;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      color: white;
+      background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1448375240586-882707db888b?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80') no-repeat center center fixed;
+      background-size: cover;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #particles-js {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+
+    .navbar {
+      background: rgba(26, 46, 26, 0.8);
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .brand {
+      font-family: 'Fredoka One', cursive;
+      font-size: 2rem;
+      color: var(--accent);
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+
+    .container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 2rem;
+      backdrop-filter: blur(12px);
+      max-width: 900px;
+      width: 90%;
+      border: 1px solid rgba(255,255,255,0.2);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      transition: transform 0.6s ease-in-out;
+    }
+
+    .card.animate {
+      transform: scale(1.02);
+    }
+
+    .upload-section {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .upload-box {
+      border: 2px dashed white;
+      background-color: rgba(255,255,255,0.05);
+      padding: 2rem;
+      border-radius: 20px;
+      text-align: center;
+      width: 300px;
+      height: 220px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .upload-box:hover {
+      background-color: rgba(255,255,255,0.1);
+    }
+
+    .upload-box i {
+      font-size: 2.5rem;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+
+    .upload-box p {
+      color: #ddd;
+      font-size: 0.95rem;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .preview-container img {
+      max-height: 220px;
+      border-radius: 15px;
+    }
+
+    .predict-btn {
+      margin-top: 2rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    button {
+      padding: 0.7rem 2rem;
+      border: none;
+      border-radius: 25px;
+      background-color: var(--accent);
+      color: #333;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background-color: #ffd877;
+    }
+
+    .prediction-result {
+      font-size: 1.5rem;
+      margin-top: 2rem;
+      color: var(--accent);
+      text-align: center;
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    .map-region {
+      margin-top: 1rem;
+    }
+
+    footer {
+      background: rgba(0,0,0,0.5);
+      color: #ccc;
+      text-align: center;
+      padding: 1rem 0;
+      margin-top: auto;
+    }
+
+    @keyframes fadeIn {
+      from {opacity: 0;}
+      to {opacity: 1;}
+    }
+
+    @media screen and (max-width: 768px) {
+      .upload-section {
+        flex-direction: column;
+      }
+
+      .upload-box {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="particles-js"></div>
+  <nav class="navbar">
+    <div class="brand"><i class="fas fa-dove"></i> BIRD SPECIES PREDICTION</div>
+  </nav>
+  <div class="container">
+    <div class="card animate">
+      <form id="uploadForm" method="post" enctype="multipart/form-data">
+        <div class="upload-section">
+          <label for="imageUpload" class="upload-box">
+            <i class="fas fa-upload"></i>
+            <p><strong>Upload Image</strong><br>Drag & Drop or Click to Browse<br>(JPG, PNG, JPEG, HEIC | Max 5MB)</p>
+            <input type="file" id="imageUpload" name="image" accept="image/*" capture="environment">
+          </label>
+          <div class="preview-container">
+            {% if full_filename %}
+              <img id="previewImage" src="{{ url_for('static', filename=full_filename) }}" />
+            {% else %}
+              <img id="previewImage" style="display:none;" />
+            {% endif %}
+          </div>
+        </div>
+        <div class="predict-btn">
+          <button type="submit">Predict</button>
+        </div>
+      </form>
+
+      {% if pred_class %}
+      <div class="prediction-result">
+        Predicted Bird: <strong>{{ pred_class }}</strong><br>
+        Confidence: {{ confidence }}%<br>
+        <a href="https://en.wikipedia.org/wiki/{{ pred_class | replace(' ', '_') }}" target="_blank">Learn More</a><br>
+               </div>
+   
+      {% endif %}
+    </div>
+  </div>
+  <footer>
+    <p>Discover the fascinating world of birds</p>
+    <p>© 2025 ML PROJECT</p>
+  </footer>
+  <script>
+    particlesJS("particles-js", {
+      "particles": {
+        "number": { "value": 60, "density": { "enable": true, "value_area": 800 } },
+        "color": { "value": "#f7c35f" },
+        "shape": { "type": "circle" },
+        "opacity": { "value": 0.7, "random": true },
+        "size": { "value": 3, "random": true },
+        "move": { "enable": true, "speed": 1.5 }
+      },
+      "interactivity": {
+        "events": {
+          "onhover": { "enable": true, "mode": "repulse" },
+          "onclick": { "enable": true, "mode": "push" }
+        }
+      }
+    });
+
+    const imageInput = document.getElementById("imageUpload");
+    const previewImage = document.getElementById("previewImage");
+    imageInput.addEventListener("change", function () {
+      const file = this.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          previewImage.src = e.target.result;
+          previewImage.style.display = "block";
+        }
+        reader.readAsDataURL(file);
+      }
+    });
+
+    function downloadPrediction() {
+      const element = document.createElement("a");
+      const text = document.querySelector(".prediction-result").innerText;
+      const file = new Blob([text], { type: 'text/plain' });
+      element.href = URL.createObjectURL(file);
+      element.download = "bird_prediction.txt";
+      document.body.appendChild(element);
+      element.click();
+    }
+
+    {% if pred_class %}
+      const utter = new SpeechSynthesisUtterance("The predicted bird is {{ pred_class }}");
+      speechSynthesis.speak(utter);
+    {% endif %}
+  </script>
+</body>
+</html>
+
+
