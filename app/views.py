@@ -1,78 +1,77 @@
-from flask import Flask, render_template, request, redirect, url_for
 import os
+from flask import Flask, render_template, request, jsonify
 import tensorflow as tf
-from werkzeug.utils import secure_filename
+import numpy as np
+from PIL import Image
 
+# Initialize the Flask app
 app = Flask(__name__)
 
-# Configure upload folder and allowed file extensions
-UPLOAD_FOLDER = 'uploads'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'heic'}
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # Max 5MB for images
+# Path to the .tflite model
+MODEL_PATH = 'app/static/model/bird_species_quant.tflite'
 
-# Load your pre-trained model
-MODEL_PATH = 'path_to_your_trained_model.tflite'
-model = tf.lite.Interpreter(model_path=MODEL_PATH)
+# Load the model
+interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
+interpreter.allocate_tensors()
 
-# Utility function to check if a file is allowed
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+# Function to preprocess the image
+def preprocess_image(image_path):
+    img = Image.open(image_path)
+    img = img.resize((224, 224))  # Adjust this size based on your model's input size
+    img = np.array(img) / 255.0  # Normalize if required by your model
+    img = np.expand_dims(img, axis=0)  # Add batch dimension
+    return img
 
-# Function to predict bird species
-def predict_bird_species(image_path):
-    img = tf.io.read_file(image_path)
-    img = tf.image.decode_jpeg(img, channels=3)
-    img = tf.image.resize(img, [224, 224])  # Resize to model input size
-    img = tf.cast(img, tf.float32) / 255.0  # Normalize image
-    img = tf.expand_dims(img, axis=0)  # Add batch dimension
+# Function to make prediction using the model
+def predict(image):
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
+    
+    interpreter.set_tensor(input_details[0]['index'], image)
+    interpreter.invoke()
 
-    # Make prediction using the model
-    input_details = model.get_input_details()
-    output_details = model.get_output_details()
-    model.set_tensor(input_details[0]['index'], img.numpy())
-    model.invoke()
+    # Get the output
+    output_data = interpreter.get_tensor(output_details[0]['index'])
+    predicted_class = np.argmax(output_data)
+    
+    return predicted_class, output_data[0][predicted_class]
 
-    # Get prediction result
-    prediction = model.get_tensor(output_details[0]['index'])[0]
-    predicted_class_idx = prediction.argmax()  # Get class with highest probability
-    confidence = prediction[predicted_class_idx] * 100
-
-    # Mapping the prediction index to class labels
-    bird_classes = ["Class1", "Class2", "Class3", "Class4"]  # Example, replace with your actual classes
-    predicted_class = bird_classes[predicted_class_idx]
-
-    return predicted_class, confidence
-
-# Home route to render the webpage
+# Route to the home page
 @app.route('/')
 def index():
     return render_template('index.html')
 
 # Route to handle image upload and prediction
 @app.route('/predict', methods=['POST'])
-def predict():
+def predict_bird_species():
     if 'image' not in request.files:
-        return redirect(request.url)
-
-    file = request.files['image']
-
-    if file and allowed_file(file.filename):
-        # Secure the filename and save the file
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
-
-        # Get prediction result
-        predicted_class, confidence = predict_bird_species(filepath)
-
-        # Render the result in the webpage
-        return render_template('index.html', 
-                               full_filename=filename, 
-                               pred_class=predicted_class, 
-                               confidence=confidence)
+        return jsonify({'error': 'No file part'}), 400
     
-    return "File type not allowed", 400
+    file = request.files['image']
+    
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    if file:
+        try:
+            # Save the image file temporarily
+            image_path = os.path.join('app/static/uploads', file.filename)
+            file.save(image_path)
+
+            # Preprocess the image and make prediction
+            processed_image = preprocess_image(image_path)
+            predicted_class, confidence = predict(processed_image)
+
+            # Send response
+            return jsonify({
+                'predicted_class': predicted_class,
+                'confidence': str(confidence),
+                'message': 'Prediction successful!'
+            })
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    else:
+        return jsonify({'error': 'Invalid file'}), 400
 
 if __name__ == '__main__':
     app.run(debug=True)
