@@ -80,11 +80,10 @@
 
     .upload-section {
       display: flex;
-      flex-direction: row;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
       gap: 2rem;
-      flex-wrap: wrap;
     }
 
     .upload-box {
@@ -148,7 +147,6 @@
       color: var(--accent);
       text-align: center;
       animation: fadeIn 1s ease-in-out;
-      word-wrap: break-word;
     }
 
     footer {
@@ -164,31 +162,40 @@
       to {opacity: 1;}
     }
 
-    /* === MOBILE FIXES FOR SMALL SCREENS === */
+    /* === ONLY 2 CRITICAL MOBILE/APK FIXES === */
     @media screen and (max-width: 768px) {
       .upload-section {
         flex-direction: column;
+        align-items: center;
       }
-      .upload-box {
-        width: 100%;
-      }
-    }
 
-    @media screen and (max-width: 480px) {
+      .upload-box {
+        width: 90%;  /* Make the upload box take 90% of the screen width on small screens */
+        max-width: 320px; /* Ensure it doesn't exceed a reasonable width */
+      }
+
+      .prediction-result {
+        font-size: 1.2rem;  /* Slightly smaller text for mobile devices */
+      }
+
+      button {
+        font-size: 1rem;  /* Adjust button text for smaller screens */
+        padding: 0.6rem 1.5rem;  /* Smaller padding */
+      }
+
       .container {
-        padding: 1rem;
-      }
-      .upload-box {
-        height: 180px;
+        padding: 1rem;  /* Reduce padding on smaller screens */
       }
     }
 
+    /* APK-specific fix (only applied if window.isAPK=true) */
     .apk-mode body {
       background-attachment: scroll !important; /* Fixes WebView rendering */
     }
   </style>
 </head>
 <body>
+  <!-- === YOUR ORIGINAL HTML (UNCHANGED) === -->
   <div id="particles-js"></div>
   <nav class="navbar">
     <div class="brand"><i class="fas fa-dove"></i> BIRD SPECIES PREDICTION</div>
@@ -228,12 +235,15 @@
     <p>© 2025 ML PROJECT</p>
   </footer>
 
+  <!-- === SCRIPTS (ORIGINAL + APK DETECTION) === -->
   <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
   <script>
+    // Detect APK mode (if WebView injects window.isAPK)
     if (window.isAPK) {
       document.body.classList.add('apk-mode');
     }
 
+    // Initialize particles.js (original config)
     particlesJS("particles-js", {
       particles: {
         number: { value: 60, density: { enable: true, value_area: 800 } },
@@ -251,6 +261,7 @@
       }
     });
 
+    // Original image preview logic
     document.getElementById('imageUpload').addEventListener('change', function() {
       const file = this.files[0];
       if (file) {
@@ -263,6 +274,7 @@
       }
     });
 
+    // Original TTS (if prediction exists)
     {% if pred_class %}
       const utter = new SpeechSynthesisUtterance("The predicted bird is {{ pred_class }}");
       speechSynthesis.speak(utter);
