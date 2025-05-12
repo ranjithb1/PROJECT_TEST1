@@ -80,10 +80,11 @@
 
     .upload-section {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       justify-content: center;
       align-items: center;
       gap: 2rem;
+      flex-wrap: wrap;
     }
 
     .upload-box {
@@ -166,25 +167,9 @@
     @media screen and (max-width: 768px) {
       .upload-section {
         flex-direction: column;
-        align-items: center;
       }
-
       .upload-box {
-        width: 90%;  /* Make the upload box take 90% of the screen width on small screens */
-        max-width: 320px; /* Ensure it doesn't exceed a reasonable width */
-      }
-
-      .prediction-result {
-        font-size: 1.2rem;  /* Slightly smaller text for mobile devices */
-      }
-
-      button {
-        font-size: 1rem;  /* Adjust button text for smaller screens */
-        padding: 0.6rem 1.5rem;  /* Smaller padding */
-      }
-
-      .container {
-        padding: 1rem;  /* Reduce padding on smaller screens */
+        width: 100%;
       }
     }
 
@@ -282,4 +267,3 @@
   </script>
 </body>
 </html>
-
