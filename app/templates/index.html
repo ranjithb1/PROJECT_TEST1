@@ -2,13 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <!-- Viewport fix for APK (original UI remains unchanged) -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- Enhanced viewport settings for APK -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
   <title>Bird Species Prediction</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Fredoka+One&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    /* === YOUR ORIGINAL CSS (100% UNCHANGED) === */
     :root {
       --primary: #4a934a;
       --secondary: #2e5e2e;
@@ -21,6 +20,7 @@
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent; /* Remove tap highlight on Android */
     }
 
     body {
@@ -31,26 +31,34 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      touch-action: manipulation; /* Disable double-tap zoom */
     }
 
-    #particles-js {
-      position: fixed;
-      width: 100%;
-      height: 100%;
-      z-index: -1;
+    /* APK-specific body style */
+    .apk-mode body {
+      background-attachment: scroll;
+      background-size: contain;
+      overflow-x: hidden;
     }
 
     .navbar {
       background: rgba(26, 46, 26, 0.8);
       padding: 1rem;
       text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
 
     .brand {
       font-family: 'Fredoka One', cursive;
-      font-size: 2rem;
+      font-size: clamp(1.5rem, 5vw, 2rem); /* Responsive font size */
       color: var(--accent);
       text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 0 10px;
     }
 
     .container {
@@ -59,42 +67,39 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 2rem;
+      padding: 1rem;
+      width: 100%;
     }
 
     .card {
       background: rgba(255,255,255,0.1);
-      border-radius: 20px;
-      padding: 2rem;
+      border-radius: 15px;
+      padding: 1.5rem;
       backdrop-filter: blur(12px);
-      max-width: 900px;
-      width: 90%;
+      width: 100%;
+      max-width: 95%;
       border: 1px solid rgba(255,255,255,0.2);
       box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-      transition: transform 0.6s ease-in-out;
-    }
-
-    .card.animate {
-      transform: scale(1.02);
+      margin: 0 auto;
     }
 
     .upload-section {
       display: flex;
-      flex-direction: row;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
-      gap: 2rem;
-      flex-wrap: wrap;
+      gap: 1.5rem;
+      width: 100%;
     }
 
     .upload-box {
       border: 2px dashed white;
       background-color: rgba(255,255,255,0.05);
-      padding: 2rem;
-      border-radius: 20px;
+      padding: 1.5rem;
+      border-radius: 15px;
       text-align: center;
-      width: 300px;
-      height: 220px;
+      width: 100%;
+      max-width: 300px;
+      min-height: 200px;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -107,28 +112,49 @@
     }
 
     .upload-box i {
-      font-size: 2.5rem;
+      font-size: 2rem;
       color: var(--accent);
-      margin-bottom: 1rem;
+      margin-bottom: 0.5rem;
     }
 
-    input[type="file"] {
-      display: none;
+    .upload-box p {
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    .preview-container {
+      width: 100%;
+      max-width: 300px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 200px;
+      background-color: rgba(0,0,0,0.3);
+      border-radius: 15px;
+      overflow: hidden;
     }
 
     .preview-container img {
-      max-height: 220px;
+      max-width: 100%;
+      max-height: 200px;
       border-radius: 15px;
+      object-fit: contain;
+    }
+
+    .no-image {
+      color: rgba(255,255,255,0.5);
+      font-size: 0.9rem;
     }
 
     .predict-btn {
-      margin-top: 2rem;
+      margin-top: 1.5rem;
       display: flex;
       justify-content: center;
+      width: 100%;
     }
 
     button {
-      padding: 0.7rem 2rem;
+      padding: 0.8rem 2.5rem;
       border: none;
       border-radius: 25px;
       background-color: var(--accent);
@@ -136,80 +162,106 @@
       font-weight: bold;
       cursor: pointer;
       transition: 0.3s;
-    }
-
-    button:hover {
-      background-color: #ffd877;
+      font-size: 1rem;
+      width: 100%;
+      max-width: 200px;
     }
 
     .prediction-result {
-      font-size: 1.5rem;
-      margin-top: 2rem;
+      font-size: 1.1rem;
+      margin-top: 1.5rem;
       color: var(--accent);
       text-align: center;
       animation: fadeIn 1s ease-in-out;
+      padding: 0 10px;
+    }
+
+    .prediction-result strong {
+      display: block;
+      margin: 0.5rem 0;
+      font-size: 1.3rem;
     }
 
     footer {
       background: rgba(0,0,0,0.5);
       color: #ccc;
       text-align: center;
-      padding: 1rem 0;
+      padding: 1rem;
       margin-top: auto;
+      font-size: 0.8rem;
+    }
+
+    /* Loading spinner */
+    .loading {
+      display: none;
+      margin: 1rem auto;
+      text-align: center;
+      color: var(--accent);
+    }
+
+    .loading i {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
 
     @keyframes fadeIn {
-      from {opacity: 0;}
-      to {opacity: 1;}
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
-    /* === ONLY 2 CRITICAL MOBILE/APK FIXES === */
-    @media screen and (max-width: 768px) {
-      .upload-section {
-        flex-direction: column;
-      }
-      .upload-box {
-        width: 100%;
-      }
+    /* APK-specific adjustments */
+    .apk-mode .card {
+      padding: 1rem;
     }
 
-    /* APK-specific fix (only applied if window.isAPK=true) */
-    .apk-mode body {
-      background-attachment: scroll !important; /* Fixes WebView rendering */
+    .apk-mode .upload-box {
+      padding: 1rem;
+    }
+
+    .apk-mode button {
+      padding: 0.7rem 2rem;
     }
   </style>
 </head>
 <body>
-  <!-- === YOUR ORIGINAL HTML (UNCHANGED) === -->
   <div id="particles-js"></div>
   <nav class="navbar">
-    <div class="brand"><i class="fas fa-dove"></i> BIRD SPECIES PREDICTION</div>
+    <div class="brand"><i class="fas fa-dove"></i> BIRD SPECIES</div>
   </nav>
   <div class="container">
-    <div class="card animate">
+    <div class="card">
       <form id="uploadForm" method="post" enctype="multipart/form-data">
         <div class="upload-section">
           <label for="imageUpload" class="upload-box">
             <i class="fas fa-upload"></i>
-            <p><strong>Upload Image</strong><br>Drag & Drop or Click to Browse<br>(JPG, PNG, JPEG, HEIC | Max 5MB)</p>
+            <p><strong>Upload Image</strong><br>Drag & Drop or Click to Browse<br><small>JPG, PNG, JPEG, HEIC | Max 5MB</small></p>
             <input type="file" id="imageUpload" name="image" accept="image/*" capture="environment">
           </label>
           <div class="preview-container">
             {% if full_filename %}
               <img id="previewImage" src="{{ url_for('static', filename=full_filename) }}" />
             {% else %}
+              <div class="no-image">NO IMAGE</div>
               <img id="previewImage" style="display:none;" />
             {% endif %}
           </div>
         </div>
         <div class="predict-btn">
-          <button type="submit">Predict</button>
+          <button type="submit">PREDICT</button>
+        </div>
+        <div class="loading" id="loadingSpinner">
+          <i class="fas fa-spinner"></i> Processing...
         </div>
       </form>
       {% if pred_class %}
         <div class="prediction-result">
-          Predicted Bird: <strong>{{ pred_class }}</strong><br>
-          Confidence: {{ confidence }}%<br>
+          <span>Predicted Bird:</span>
+          <strong>{{ pred_class }}</strong>
+          <span>Confidence: {{ confidence }}%</span>
           <a href="https://en.wikipedia.org/wiki/{{ pred_class | replace(' ', '_') }}" target="_blank">Learn More</a>
         </div>
       {% endif %}
@@ -220,50 +272,68 @@
     <p>© 2025 ML PROJECT</p>
   </footer>
 
-  <!-- === SCRIPTS (ORIGINAL + APK DETECTION) === -->
   <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
   <script>
-    // Detect APK mode (if WebView injects window.isAPK)
-    if (window.isAPK) {
+    // Detect APK mode
+    if (window.isAPK || /Android/i.test(navigator.userAgent)) {
       document.body.classList.add('apk-mode');
+      // Disable particles.js in APK mode if it causes performance issues
+      document.getElementById('particles-js').style.display = 'none';
     }
 
-    // Initialize particles.js (original config)
-    particlesJS("particles-js", {
-      particles: {
-        number: { value: 60, density: { enable: true, value_area: 800 } },
-        color: { value: "#f7c35f" },
-        shape: { type: "circle" },
-        opacity: { value: 0.7, random: true },
-        size: { value: 3, random: true },
-        move: { enable: true, speed: 1.5 }
-      },
-      interactivity: {
-        events: {
-          onhover: { enable: true, mode: "repulse" },
-          onclick: { enable: true, mode: "push" }
+    // Initialize particles.js (simpler config for mobile)
+    if (!document.body.classList.contains('apk-mode')) {
+      particlesJS("particles-js", {
+        particles: {
+          number: { value: 30, density: { enable: true, value_area: 800 } },
+          color: { value: "#f7c35f" },
+          shape: { type: "circle" },
+          opacity: { value: 0.5, random: true },
+          size: { value: 2, random: true },
+          move: { enable: true, speed: 1 }
         }
-      }
-    });
+      });
+    }
 
-    // Original image preview logic
+    // Image preview with better mobile handling
     document.getElementById('imageUpload').addEventListener('change', function() {
       const file = this.files[0];
+      const preview = document.getElementById('previewImage');
+      const noImage = document.querySelector('.no-image');
+      
       if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
-          document.getElementById('previewImage').src = e.target.result;
-          document.getElementById('previewImage').style.display = "block";
+          preview.src = e.target.result;
+          preview.style.display = "block";
+          if (noImage) noImage.style.display = "none";
         }
         reader.readAsDataURL(file);
       }
     });
 
-    // Original TTS (if prediction exists)
+    // Form submission handling
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+      const fileInput = document.getElementById('imageUpload');
+      if (fileInput.files.length > 0) {
+        document.getElementById('loadingSpinner').style.display = 'block';
+      }
+    });
+
+    // TTS for prediction results
     {% if pred_class %}
-      const utter = new SpeechSynthesisUtterance("The predicted bird is {{ pred_class }}");
-      speechSynthesis.speak(utter);
+      if ('speechSynthesis' in window) {
+        const utter = new SpeechSynthesisUtterance();
+        utter.text = `The predicted bird is ${safePredClass} with ${confidence}% confidence`;
+        utter.rate = 0.9;
+        speechSynthesis.speak(utter);
+      }
     {% endif %}
+
+    // Prevent zooming on mobile
+    document.addEventListener('gesturestart', function(e) {
+      e.preventDefault();
+    });
   </script>
 </body>
 </html>
