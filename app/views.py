@@ -1,77 +1,46 @@
 from app import app
-from flask import request, render_template
 import numpy as np
 from PIL import Image
 import string
 import random
-import os
 import tensorflow as tf
 
-# Config path for image uploads
-app.config['INITIAL_FILE_UPLOADS'] = 'app/static/uploads'
+from flask import Flask, request, render_template, redirect, url_for
+from werkzeug.utils import secure_filename
+import os
+from predict import prediction
 
-# Load the TFLite model
-interpreter = tf.lite.Interpreter(model_path='app/static/model/bird_species_quant.tflite')
-interpreter.allocate_tensors()
+app = Flask(__name__)
 
-# Get input and output details
-input_details = interpreter.get_input_details()
-output_details = interpreter.get_output_details()
+UPLOAD_FOLDER = os.path.join('static', 'uploads')
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # Limit upload to 5MB
 
-# Class labels (make sure they are in the correct order of your model's output)
-classes = [
-    'AMERICAN GOLDFINCH',
-    'BARN OWL',
-    'CARMINE BEE-EATER',
-    'DOWNY WOODPECKER',
-    'EMPEROR PENGUIN',
-    'FLAMINGO'
-]
-
-@app.route("/", methods=["GET", "POST"])
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    if request.method == "GET":
-        # Load default background image on GET
-        full_filename = 'images/white_bg.jpg'
-        return render_template("index.html", full_filename=full_filename)
+    pred_class = None
+    full_filename = None
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            return redirect(request.url)
+        file = request.files['file']
+        if file.filename == '':
+            return redirect(request.url)
+        if file:
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
+            pred_class = prediction(filepath)
+            full_filename = os.path.join('uploads', filename)  # Relative to /static/
+    return render_template('index.html', pred_class=pred_class, full_filename=full_filename)
 
-    if request.method == "POST":
-        # Generate unique file name
-        name = ''.join(random.choices(string.ascii_lowercase, k=10)) + '.png'
-        full_filename = 'uploads/' + name
+@app.after_request
+def add_header(response):
+    # Prevent caching and ensure compatibility with Android WebView
+    response.headers['Cache-Control'] = 'no-store'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
-        # Read uploaded image
-        image_upload = request.files['image']
-        image = Image.open(image_upload).convert('RGB')
-        image = image.resize((224, 224))
-
-        # Save the image
-        image_path = os.path.join(app.config['INITIAL_FILE_UPLOADS'], name)
-        image.save(image_path)
-
-        # Preprocess image
-        image_arr = np.array(image).reshape(1, 224, 224, 3).astype(np.float32) / 255.0
-
-        # Set input tensor
-        interpreter.set_tensor(input_details[0]['index'], image_arr)
-        
-        # Run inference
-        interpreter.invoke()
-        
-        # Get output tensor
-        result = interpreter.get_tensor(output_details[0]['index'])
-        
-        ind = np.argmax(result)
-        confidence = round(result[0][ind] * 100, 2)
-        prediction = classes[ind]
-
-        return render_template(
-            'index.html',
-            full_filename=full_filename,
-            pred_class=prediction,
-            confidence=confidence
-        )
-
-# Run the app
 if __name__ == '__main__':
     app.run(debug=True)
