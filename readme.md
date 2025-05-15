@@ -1,13 +1,13 @@
   Bird Species Classifier using Transfer Learning (VGG16)
 
-✅ Leverage VGG16 as a feature extractor by adding custom classification layers on top.
-✅ Preprocess and augment image data using Keras' ImageDataGenerator to improve model robustness.
-✅ Split the dataset into training, validation, and test sets for proper model evaluation.
-✅ Train the model with callbacks such as early stopping and learning rate reduction to prevent overfitting.
-✅ Evaluate model performance using metrics like accuracy, confusion matrix, and classification report.
-✅ Visualize predictions by displaying actual vs predicted classes on random test images.
-✅ Save the trained model in .h5 format for reuse or further training.
-✅ Quantize and convert the model to .tflite with int16 optimization for faster inference and smaller size, ideal for Android/Web deployment.
+1. Leverage VGG16 as a feature extractor by adding custom classification layers on top.
+2. Preprocess and augment image data using Keras' ImageDataGenerator to improve model robustness.
+3. Split the dataset into training, validation, and test sets for proper model evaluation.
+4. Train the model with callbacks such as early stopping and learning rate reduction to prevent overfitting.
+5. Evaluate model performance using metrics like accuracy, confusion matrix, and classification report.
+6. Visualize predictions by displaying actual vs predicted classes on random test images.
+7. Save the trained model in .h5 format for reuse or further training.
+8. Quantize and convert the model to .tflite with int16 optimization for faster inference and smaller size, ideal for Android/Web deployment.
 
 🚀 Local Deployment using Flask
 1. After training and quantizing the model, we implemented a lightweight web interface to run the bird species prediction locally using:
